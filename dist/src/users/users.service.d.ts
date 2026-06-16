@@ -13,7 +13,7 @@ export declare class UsersService {
         bio: string;
         jobTitle: string;
         location: string;
-        provider: import("@prisma/client").$Enums.AuthProvider;
+        provider: import(".prisma/client").$Enums.AuthProvider;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -25,7 +25,7 @@ export declare class UsersService {
             };
         } & {
             id: string;
-            role: import("@prisma/client").$Enums.Role;
+            role: import(".prisma/client").$Enums.Role;
             joinedAt: Date;
             userId: string;
             teamId: string;
@@ -41,7 +41,7 @@ export declare class UsersService {
         bio: string;
         jobTitle: string;
         location: string;
-        provider: import("@prisma/client").$Enums.AuthProvider;
+        provider: import(".prisma/client").$Enums.AuthProvider;
         updatedAt: Date;
     }>;
 }

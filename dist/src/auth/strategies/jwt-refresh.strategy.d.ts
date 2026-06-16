@@ -23,7 +23,7 @@ export declare class JwtRefreshStrategy extends JwtRefreshStrategy_base {
         bio: string | null;
         jobTitle: string | null;
         location: string | null;
-        provider: import("@prisma/client").$Enums.AuthProvider;
+        provider: import(".prisma/client").$Enums.AuthProvider;
         isActive: boolean;
         refreshToken: string | null;
         createdAt: Date;

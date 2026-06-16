@@ -14,7 +14,7 @@ export declare class NotificationsController {
         createdAt: Date;
         userId: string;
         title: string;
-        type: import("@prisma/client").$Enums.NotificationType;
+        type: import(".prisma/client").$Enums.NotificationType;
         message: string;
         read: boolean;
         taskId: string | null;
@@ -26,7 +26,7 @@ export declare class NotificationsController {
     }>;
     markAsRead(id: string, user: {
         id: string;
-    }): Promise<import("@prisma/client").Prisma.BatchPayload>;
+    }): Promise<import(".prisma/client").Prisma.BatchPayload>;
     markAllAsRead(user: {
         id: string;
     }): Promise<{

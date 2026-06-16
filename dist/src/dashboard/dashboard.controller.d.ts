@@ -22,9 +22,9 @@ export declare class DashboardController {
             createdAt: Date;
             updatedAt: Date;
             description: string | null;
-            status: import("@prisma/client").$Enums.TaskStatus;
+            status: import(".prisma/client").$Enums.TaskStatus;
             title: string;
-            priority: import("@prisma/client").$Enums.TaskPriority;
+            priority: import(".prisma/client").$Enums.TaskPriority;
             dueDate: Date | null;
             position: number;
             projectId: string;

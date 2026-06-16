@@ -17,16 +17,16 @@ export declare class ProjectsService {
         updatedAt: Date;
         description: string | null;
         teamId: string;
-        status: import("@prisma/client").$Enums.ProjectStatus;
+        status: import(".prisma/client").$Enums.ProjectStatus;
         startDate: Date | null;
         endDate: Date | null;
     }>;
     findByTeam(teamId: string, userId: string): Promise<({
         tasks: {
             id: string;
-            status: import("@prisma/client").$Enums.TaskStatus;
+            status: import(".prisma/client").$Enums.TaskStatus;
             title: string;
-            priority: import("@prisma/client").$Enums.TaskPriority;
+            priority: import(".prisma/client").$Enums.TaskPriority;
         }[];
         _count: {
             tasks: number;
@@ -38,7 +38,7 @@ export declare class ProjectsService {
         updatedAt: Date;
         description: string | null;
         teamId: string;
-        status: import("@prisma/client").$Enums.ProjectStatus;
+        status: import(".prisma/client").$Enums.ProjectStatus;
         startDate: Date | null;
         endDate: Date | null;
     })[]>;
@@ -53,7 +53,7 @@ export declare class ProjectsService {
                 };
             } & {
                 id: string;
-                role: import("@prisma/client").$Enums.Role;
+                role: import(".prisma/client").$Enums.Role;
                 joinedAt: Date;
                 userId: string;
                 teamId: string;
@@ -84,9 +84,9 @@ export declare class ProjectsService {
             createdAt: Date;
             updatedAt: Date;
             description: string | null;
-            status: import("@prisma/client").$Enums.TaskStatus;
+            status: import(".prisma/client").$Enums.TaskStatus;
             title: string;
-            priority: import("@prisma/client").$Enums.TaskPriority;
+            priority: import(".prisma/client").$Enums.TaskPriority;
             dueDate: Date | null;
             position: number;
             projectId: string;
@@ -103,7 +103,7 @@ export declare class ProjectsService {
         updatedAt: Date;
         description: string | null;
         teamId: string;
-        status: import("@prisma/client").$Enums.ProjectStatus;
+        status: import(".prisma/client").$Enums.ProjectStatus;
         startDate: Date | null;
         endDate: Date | null;
     }>;
@@ -114,7 +114,7 @@ export declare class ProjectsService {
         updatedAt: Date;
         description: string | null;
         teamId: string;
-        status: import("@prisma/client").$Enums.ProjectStatus;
+        status: import(".prisma/client").$Enums.ProjectStatus;
         startDate: Date | null;
         endDate: Date | null;
     }>;

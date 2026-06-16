@@ -12,12 +12,12 @@ export declare class NotificationsService {
         createdAt: Date;
         userId: string;
         title: string;
-        type: import("@prisma/client").$Enums.NotificationType;
+        type: import(".prisma/client").$Enums.NotificationType;
         message: string;
         read: boolean;
         taskId: string | null;
     })[]>;
-    markAsRead(notificationId: string, userId: string): Promise<import("@prisma/client").Prisma.BatchPayload>;
+    markAsRead(notificationId: string, userId: string): Promise<import(".prisma/client").Prisma.BatchPayload>;
     markAllAsRead(userId: string): Promise<{
         message: string;
     }>;

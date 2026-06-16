@@ -31,7 +31,7 @@ export declare class AuthController {
             bio: string | null;
             jobTitle: string | null;
             location: string | null;
-            provider: import("@prisma/client").$Enums.AuthProvider;
+            provider: import(".prisma/client").$Enums.AuthProvider;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;

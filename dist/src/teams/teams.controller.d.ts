@@ -16,7 +16,7 @@ export declare class TeamsController {
             };
         } & {
             id: string;
-            role: import("@prisma/client").$Enums.Role;
+            role: import(".prisma/client").$Enums.Role;
             joinedAt: Date;
             userId: string;
             teamId: string;
@@ -40,7 +40,7 @@ export declare class TeamsController {
             };
         } & {
             id: string;
-            role: import("@prisma/client").$Enums.Role;
+            role: import(".prisma/client").$Enums.Role;
             joinedAt: Date;
             userId: string;
             teamId: string;
@@ -74,9 +74,9 @@ export declare class TeamsController {
         id: string;
         email: string;
         createdAt: Date;
-        role: import("@prisma/client").$Enums.Role;
+        role: import(".prisma/client").$Enums.Role;
         teamId: string;
-        status: import("@prisma/client").$Enums.InvitationStatus;
+        status: import(".prisma/client").$Enums.InvitationStatus;
         token: string;
         expiresAt: Date;
         senderId: string;
@@ -93,7 +93,7 @@ export declare class TeamsController {
             };
         } & {
             id: string;
-            role: import("@prisma/client").$Enums.Role;
+            role: import(".prisma/client").$Enums.Role;
             joinedAt: Date;
             userId: string;
             teamId: string;
@@ -102,7 +102,7 @@ export declare class TeamsController {
             id: string;
             name: string;
             createdAt: Date;
-            status: import("@prisma/client").$Enums.ProjectStatus;
+            status: import(".prisma/client").$Enums.ProjectStatus;
         }[];
     } & {
         id: string;
@@ -119,9 +119,9 @@ export declare class TeamsController {
         id: string;
         email: string;
         createdAt: Date;
-        role: import("@prisma/client").$Enums.Role;
+        role: import(".prisma/client").$Enums.Role;
         teamId: string;
-        status: import("@prisma/client").$Enums.InvitationStatus;
+        status: import(".prisma/client").$Enums.InvitationStatus;
         token: string;
         expiresAt: Date;
         senderId: string;
@@ -137,9 +137,9 @@ export declare class TeamsController {
         id: string;
         email: string;
         createdAt: Date;
-        role: import("@prisma/client").$Enums.Role;
+        role: import(".prisma/client").$Enums.Role;
         teamId: string;
-        status: import("@prisma/client").$Enums.InvitationStatus;
+        status: import(".prisma/client").$Enums.InvitationStatus;
         token: string;
         expiresAt: Date;
         senderId: string;
@@ -155,7 +155,7 @@ export declare class TeamsController {
         id: string;
     }, dto: UpdateMemberRoleDto): Promise<{
         id: string;
-        role: import("@prisma/client").$Enums.Role;
+        role: import(".prisma/client").$Enums.Role;
         joinedAt: Date;
         userId: string;
         teamId: string;
