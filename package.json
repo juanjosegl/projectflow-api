@@ -35,7 +35,8 @@
     "reflect-metadata": "^0.2.2",
     "resend": "^6.12.4",
     "rxjs": "^7.8.2",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "prisma": "6.19.3"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
@@ -49,7 +50,6 @@
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
-    "prisma": "6.19.3",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3"
