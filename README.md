@@ -47,9 +47,16 @@ The demo accounts are shared by every visitor, so the API rebuilds the demo team
 (on by default on Render, where the free instance sleeps after ~15 idle minutes; set `DEMO_RESET_ON_BOOT=true|false` to override).
 Other users' data is never touched.
 
-### Smoke test
+### Tests
 
-With the API running against a local seeded database:
+Unit tests (Jest, Prisma mocked) cover the permission rules in `TeamsService` and `TasksService`: who can invite, change roles,
+remove members and delete tasks, the last-admin rule, invitation checks, and when notifications are sent.
+
+```bash
+npm test
+```
+
+The smoke test needs the API running against a local seeded database:
 
 ```bash
 npm run test:smoke
