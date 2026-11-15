@@ -21,6 +21,7 @@ const notifications_module_1 = require("./notifications/notifications.module");
 const dashboard_module_1 = require("./dashboard/dashboard.module");
 const upload_module_1 = require("./upload/upload.module");
 const app_controller_1 = require("./app.controller");
+const demo_reset_service_1 = require("./demo-reset.service");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -41,6 +42,7 @@ exports.AppModule = AppModule = __decorate([
             upload_module_1.UploadModule,
         ],
         controllers: [app_controller_1.AppController],
+        providers: [demo_reset_service_1.DemoResetService],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

@@ -28,8 +28,8 @@ export declare class TeamsService {
         name: string;
         createdAt: Date;
         updatedAt: Date;
-        slug: string;
         description: string | null;
+        slug: string;
     }>;
     findMyTeams(userId: string): Promise<({
         members: ({
@@ -54,8 +54,8 @@ export declare class TeamsService {
         name: string;
         createdAt: Date;
         updatedAt: Date;
-        slug: string;
         description: string | null;
+        slug: string;
     })[]>;
     findOne(teamId: string, userId: string): Promise<{
         members: ({
@@ -83,8 +83,8 @@ export declare class TeamsService {
         name: string;
         createdAt: Date;
         updatedAt: Date;
-        slug: string;
         description: string | null;
+        slug: string;
     }>;
     inviteMember(teamId: string, requesterId: string, dto: InviteMemberDto): Promise<{
         message: string;
@@ -150,11 +150,11 @@ export declare class TeamsService {
         teamId: string;
     }>;
     getInvitationByToken(token: string): Promise<{
-        email: string;
-        role: import(".prisma/client").$Enums.Role;
         team: {
             name: string;
         };
+        email: string;
+        role: import(".prisma/client").$Enums.Role;
         status: import(".prisma/client").$Enums.InvitationStatus;
         expiresAt: Date;
         sender: {

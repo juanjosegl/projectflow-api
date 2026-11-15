@@ -86,20 +86,6 @@ export declare class TasksController {
     findOne(taskId: string, user: {
         id: string;
     }): Promise<{
-        comments: ({
-            author: {
-                id: string;
-                name: string;
-                avatar: string;
-            };
-        } & {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            taskId: string;
-            content: string;
-            authorId: string;
-        })[];
         project: {
             team: {
                 members: {
@@ -114,8 +100,8 @@ export declare class TasksController {
                 name: string;
                 createdAt: Date;
                 updatedAt: Date;
-                slug: string;
                 description: string | null;
+                slug: string;
             };
         } & {
             id: string;
@@ -128,6 +114,20 @@ export declare class TasksController {
             startDate: Date | null;
             endDate: Date | null;
         };
+        comments: ({
+            author: {
+                id: string;
+                name: string;
+                avatar: string;
+            };
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            taskId: string;
+            content: string;
+            authorId: string;
+        })[];
         assignee: {
             id: string;
             name: string;

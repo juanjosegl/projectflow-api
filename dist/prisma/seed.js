@@ -33,70 +33,54 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.seedDemo = seedDemo;
 const client_1 = require("@prisma/client");
 const bcrypt = __importStar(require("bcryptjs"));
-const prisma = new client_1.PrismaClient();
-async function main() {
-    console.log('Seeding database...');
+const DEMO_TEAM_SLUG = 'engineering-team-demo';
+const DEMO_PEOPLE = [
+    { email: 'alice@projectflow.dev', name: 'Alice Johnson', role: client_1.Role.ADMIN },
+    { email: 'bob@projectflow.dev', name: 'Bob Martinez', role: client_1.Role.MANAGER },
+    { email: 'carlos@projectflow.dev', name: 'Carlos Rivera', role: client_1.Role.DEVELOPER },
+];
+async function seedDemo(prisma) {
     const password = await bcrypt.hash('Password123!', 12);
-    const alice = await prisma.user.upsert({
-        where: { email: 'alice@projectflow.dev' },
-        update: {},
-        create: { name: 'Alice Johnson', email: 'alice@projectflow.dev', password },
-    });
-    const bob = await prisma.user.upsert({
-        where: { email: 'bob@projectflow.dev' },
-        update: {},
-        create: { name: 'Bob Martinez', email: 'bob@projectflow.dev', password },
-    });
-    const carlos = await prisma.user.upsert({
-        where: { email: 'carlos@projectflow.dev' },
-        update: {},
-        create: { name: 'Carlos Rivera', email: 'carlos@projectflow.dev', password },
-    });
-    const team = await prisma.team.upsert({
-        where: { slug: 'engineering-team-demo' },
-        update: {},
-        create: {
-            name: 'Engineering Team',
-            description: 'Main product engineering team',
-            slug: 'engineering-team-demo',
-            members: {
-                create: [
-                    { userId: alice.id, role: client_1.Role.ADMIN },
-                    { userId: bob.id, role: client_1.Role.MANAGER },
-                    { userId: carlos.id, role: client_1.Role.DEVELOPER },
-                ],
+    await prisma.$transaction(async (tx) => {
+        const reset = {
+            password, isActive: true, avatar: null, bio: null, phone: null,
+            jobTitle: null, location: null, birthDate: null,
+        };
+        const users = [];
+        for (const p of DEMO_PEOPLE) {
+            users.push(await tx.user.upsert({
+                where: { email: p.email },
+                update: { name: p.name, ...reset },
+                create: { name: p.name, email: p.email, password },
+            }));
+        }
+        const [alice, bob, carlos] = users;
+        const ids = users.map((u) => u.id);
+        await tx.team.deleteMany({
+            where: {
+                slug: { not: DEMO_TEAM_SLUG },
+                members: { some: { userId: { in: ids } }, every: { userId: { in: ids } } },
             },
-        },
-    });
-    await prisma.project.upsert({
-        where: { id: 'demo-project-1' },
-        update: {},
-        create: {
-            id: 'demo-project-1',
-            name: 'Website Redesign',
-            description: 'Complete redesign of the marketing website',
-            status: 'ACTIVE',
-            teamId: team.id,
-        },
-    });
-    await prisma.project.upsert({
-        where: { id: 'demo-project-2' },
-        update: {},
-        create: {
-            id: 'demo-project-2',
-            name: 'Mobile App v2',
-            description: 'Second version of the mobile application',
-            status: 'ACTIVE',
-            teamId: team.id,
-        },
-    });
-    const existing = await prisma.task.count({ where: { project: { teamId: team.id } } });
-    if (existing > 0) {
-        console.log('Demo tasks already exist, skipping task seed.');
-    }
-    else {
+        });
+        await tx.team.deleteMany({ where: { slug: DEMO_TEAM_SLUG } });
+        await tx.notification.deleteMany({ where: { userId: { in: ids } } });
+        await tx.team.create({
+            data: {
+                name: 'Engineering Team',
+                description: 'Main product engineering team',
+                slug: DEMO_TEAM_SLUG,
+                members: { create: DEMO_PEOPLE.map((p, i) => ({ userId: ids[i], role: p.role })) },
+                projects: {
+                    create: [
+                        { id: 'demo-project-1', name: 'Website Redesign', description: 'Complete redesign of the marketing website', status: 'ACTIVE' },
+                        { id: 'demo-project-2', name: 'Mobile App v2', description: 'Second version of the mobile application', status: 'ACTIVE' },
+                    ],
+                },
+            },
+        });
         const day = 24 * 60 * 60 * 1000;
         const due = (days) => new Date(Date.now() + days * day);
         const S = client_1.TaskStatus;
@@ -122,7 +106,7 @@ async function main() {
         };
         for (const [projectId, rows] of Object.entries(boards)) {
             for (const [i, [title, status, priority, assigneeId, dueIn]] of rows.entries()) {
-                const task = await prisma.task.create({
+                const task = await tx.task.create({
                     data: {
                         title, status, priority, assigneeId, position: i, projectId,
                         creatorId: alice.id,
@@ -131,7 +115,7 @@ async function main() {
                     },
                 });
                 if (status === S.IN_PROGRESS || status === S.IN_REVIEW) {
-                    await prisma.comment.createMany({
+                    await tx.comment.createMany({
                         data: [
                             { taskId: task.id, authorId: bob.id, content: 'I started on this, first draft is up for review.' },
                             { taskId: task.id, authorId: alice.id, content: 'Looks good! Left a couple of notes on edge cases.' },
@@ -140,14 +124,20 @@ async function main() {
                 }
             }
         }
-    }
-    console.log('\nSeed complete!');
-    console.log('Demo accounts (password: Password123!):');
-    console.log('  alice@projectflow.dev  — Admin');
-    console.log('  bob@projectflow.dev    — Manager');
-    console.log('  carlos@projectflow.dev — Developer');
+    }, { timeout: 30_000 });
 }
-main()
-    .catch(console.error)
-    .finally(() => prisma.$disconnect());
+if (require.main === module) {
+    const prisma = new client_1.PrismaClient();
+    seedDemo(prisma)
+        .then(() => {
+        console.log('Demo data ready. Accounts (password: Password123!):');
+        for (const p of DEMO_PEOPLE)
+            console.log(`  ${p.email}  ${p.role}`);
+    })
+        .catch((e) => {
+        console.error(e);
+        process.exitCode = 1;
+    })
+        .finally(() => prisma.$disconnect());
+}
 //# sourceMappingURL=seed.js.map

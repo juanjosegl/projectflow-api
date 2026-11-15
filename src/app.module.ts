@@ -12,6 +12,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { UploadModule } from './upload/upload.module';
 import { AppController } from './app.controller';
+import { DemoResetService } from './demo-reset.service';
 
 @Module({
   imports: [
@@ -29,5 +30,6 @@ import { AppController } from './app.controller';
     UploadModule,
   ],
   controllers: [AppController],
+  providers: [DemoResetService],
 })
 export class AppModule {}

@@ -64,8 +64,8 @@ export declare class ProjectsService {
             name: string;
             createdAt: Date;
             updatedAt: Date;
-            slug: string;
             description: string | null;
+            slug: string;
         };
         tasks: ({
             assignee: {

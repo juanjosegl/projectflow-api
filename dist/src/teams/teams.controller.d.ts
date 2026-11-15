@@ -26,8 +26,8 @@ export declare class TeamsController {
         name: string;
         createdAt: Date;
         updatedAt: Date;
-        slug: string;
         description: string | null;
+        slug: string;
     }>;
     findMyTeams(user: {
         id: string;
@@ -54,8 +54,8 @@ export declare class TeamsController {
         name: string;
         createdAt: Date;
         updatedAt: Date;
-        slug: string;
         description: string | null;
+        slug: string;
     })[]>;
     getMyInvitations(user: {
         id: string;
@@ -109,8 +109,8 @@ export declare class TeamsController {
         name: string;
         createdAt: Date;
         updatedAt: Date;
-        slug: string;
         description: string | null;
+        slug: string;
     }>;
     invite(teamId: string, user: {
         id: string;
@@ -127,11 +127,11 @@ export declare class TeamsController {
         senderId: string;
     }>;
     getInvitation(token: string): Promise<{
-        email: string;
-        role: import(".prisma/client").$Enums.Role;
         team: {
             name: string;
         };
+        email: string;
+        role: import(".prisma/client").$Enums.Role;
         status: import(".prisma/client").$Enums.InvitationStatus;
         expiresAt: Date;
         sender: {

@@ -90,7 +90,8 @@ export class AuthController {
   // Web (Vercel) and API (Render) live on different sites, so in production the
   // cookie must be SameSite=None + Secure or the browser never sends it to /refresh.
   private cookieOptions() {
-    const prod = process.env.NODE_ENV === 'production';
+    // RENDER is set by Render itself, so this holds even if NODE_ENV was never configured there.
+    const prod = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
     return { httpOnly: true, secure: prod, sameSite: (prod ? 'none' : 'lax') as 'none' | 'lax', path: '/' };
   }
 

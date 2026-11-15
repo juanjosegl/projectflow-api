@@ -60,20 +60,6 @@ export declare class TasksService {
         creatorId: string;
     })[]>;
     findOne(taskId: string, userId: string): Promise<{
-        comments: ({
-            author: {
-                id: string;
-                name: string;
-                avatar: string;
-            };
-        } & {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            taskId: string;
-            content: string;
-            authorId: string;
-        })[];
         project: {
             team: {
                 members: {
@@ -88,8 +74,8 @@ export declare class TasksService {
                 name: string;
                 createdAt: Date;
                 updatedAt: Date;
-                slug: string;
                 description: string | null;
+                slug: string;
             };
         } & {
             id: string;
@@ -102,6 +88,20 @@ export declare class TasksService {
             startDate: Date | null;
             endDate: Date | null;
         };
+        comments: ({
+            author: {
+                id: string;
+                name: string;
+                avatar: string;
+            };
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            taskId: string;
+            content: string;
+            authorId: string;
+        })[];
         assignee: {
             id: string;
             name: string;

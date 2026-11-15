@@ -62,7 +62,7 @@ let AuthController = class AuthController {
         return user;
     }
     cookieOptions() {
-        const prod = process.env.NODE_ENV === 'production';
+        const prod = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
         return { httpOnly: true, secure: prod, sameSite: (prod ? 'none' : 'lax'), path: '/' };
     }
     setRefreshCookie(res, token) {

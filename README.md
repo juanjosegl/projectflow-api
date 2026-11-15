@@ -1,5 +1,7 @@
 # ProjectFlow API
 
+[![CI](https://github.com/juanjosegl/projectflow-api/actions/workflows/ci.yml/badge.svg)](https://github.com/juanjosegl/projectflow-api/actions/workflows/ci.yml)
+
 REST API for **ProjectFlow**, a team task manager with kanban boards, roles, invitations, comments and notifications.
 Frontend: [projectflow-web](https://github.com/juanjosegl/projectflow-web).
 
@@ -41,6 +43,10 @@ npm run dev                   # http://localhost:3001/api/v1 · docs at /api/doc
 
 Demo accounts (password `Password123!`): `alice@projectflow.dev` (admin), `bob@projectflow.dev` (manager), `carlos@projectflow.dev` (developer).
 
+The demo accounts are shared by every visitor, so the API rebuilds the demo team each time it boots
+(on by default on Render, where the free instance sleeps after ~15 idle minutes; set `DEMO_RESET_ON_BOOT=true|false` to override).
+Other users' data is never touched.
+
 ### Smoke test
 
 With the API running against a local seeded database:
@@ -49,7 +55,7 @@ With the API running against a local seeded database:
 npm run test:smoke
 ```
 
-It checks the main flows end to end: access control between teams, refresh-token rotation and revocation,
+CI runs it on every push against a real Postgres. It checks the main flows end to end: access control between teams, refresh-token rotation and revocation,
 task assignment rules, notifications, invitations and the last-admin rule.
 
 ## Main endpoints
