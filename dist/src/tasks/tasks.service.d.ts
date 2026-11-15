@@ -5,6 +5,9 @@ export declare class TasksService {
     private prisma;
     constructor(prisma: PrismaService);
     private assertProjectAccess;
+    private assertAssigneeInTeam;
+    private toDate;
+    private notify;
     create(projectId: string, userId: string, dto: CreateTaskDto): Promise<{
         assignee: {
             id: string;
@@ -21,12 +24,12 @@ export declare class TasksService {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.TaskStatus;
+        projectId: string;
         title: string;
         priority: import(".prisma/client").$Enums.TaskPriority;
+        assigneeId: string | null;
         dueDate: Date | null;
         position: number;
-        projectId: string;
-        assigneeId: string | null;
         creatorId: string;
     }>;
     findByProject(projectId: string, userId: string): Promise<({
@@ -48,12 +51,12 @@ export declare class TasksService {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.TaskStatus;
+        projectId: string;
         title: string;
         priority: import(".prisma/client").$Enums.TaskPriority;
+        assigneeId: string | null;
         dueDate: Date | null;
         position: number;
-        projectId: string;
-        assigneeId: string | null;
         creatorId: string;
     })[]>;
     findOne(taskId: string, userId: string): Promise<{
@@ -114,12 +117,12 @@ export declare class TasksService {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.TaskStatus;
+        projectId: string;
         title: string;
         priority: import(".prisma/client").$Enums.TaskPriority;
+        assigneeId: string | null;
         dueDate: Date | null;
         position: number;
-        projectId: string;
-        assigneeId: string | null;
         creatorId: string;
     }>;
     update(taskId: string, userId: string, dto: UpdateTaskDto): Promise<{
@@ -134,12 +137,12 @@ export declare class TasksService {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.TaskStatus;
+        projectId: string;
         title: string;
         priority: import(".prisma/client").$Enums.TaskPriority;
+        assigneeId: string | null;
         dueDate: Date | null;
         position: number;
-        projectId: string;
-        assigneeId: string | null;
         creatorId: string;
     }>;
     remove(taskId: string, userId: string): Promise<{
@@ -159,12 +162,12 @@ export declare class TasksService {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.TaskStatus;
+        projectId: string;
         title: string;
         priority: import(".prisma/client").$Enums.TaskPriority;
+        assigneeId: string | null;
         dueDate: Date | null;
         position: number;
-        projectId: string;
-        assigneeId: string | null;
         creatorId: string;
     })[]>;
 }

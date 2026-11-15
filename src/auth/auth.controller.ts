@@ -65,7 +65,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   async logout(@CurrentUser() user: { id: string }, @Res({ passthrough: true }) res: Response) {
-    res.clearCookie('refresh_token');
+    res.clearCookie('refresh_token', this.cookieOptions());
     return this.authService.logout(user.id);
   }
 
@@ -87,12 +87,14 @@ export class AuthController {
     return user;
   }
 
+  // Web (Vercel) and API (Render) live on different sites, so in production the
+  // cookie must be SameSite=None + Secure or the browser never sends it to /refresh.
+  private cookieOptions() {
+    const prod = process.env.NODE_ENV === 'production';
+    return { httpOnly: true, secure: prod, sameSite: (prod ? 'none' : 'lax') as 'none' | 'lax', path: '/' };
+  }
+
   private setRefreshCookie(res: Response, token: string) {
-    res.cookie('refresh_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('refresh_token', token, { ...this.cookieOptions(), maxAge: 7 * 24 * 60 * 60 * 1000 });
   }
 }

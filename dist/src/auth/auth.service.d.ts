@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+export declare const hashToken: (token: string) => string;
 export declare class AuthService {
     private prisma;
     private jwtService;

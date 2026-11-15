@@ -13,21 +13,6 @@ export declare class JwtRefreshStrategy extends JwtRefreshStrategy_base {
         sub: string;
     }): Promise<{
         id: string;
-        email: string;
-        googleId: string | null;
-        name: string;
-        password: string | null;
-        avatar: string | null;
-        phone: string | null;
-        birthDate: Date | null;
-        bio: string | null;
-        jobTitle: string | null;
-        location: string | null;
-        provider: import(".prisma/client").$Enums.AuthProvider;
-        isActive: boolean;
-        refreshToken: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
 }
 export {};

@@ -25,8 +25,8 @@ let DashboardController = class DashboardController {
     getMyStats(user) {
         return this.dashboardService.getMyStats(user.id);
     }
-    getTeamStats(teamId) {
-        return this.dashboardService.getTeamStats(teamId);
+    getTeamStats(teamId, user) {
+        return this.dashboardService.getTeamStats(teamId, user.id);
     }
 };
 exports.DashboardController = DashboardController;
@@ -42,8 +42,9 @@ __decorate([
     (0, common_1.Get)('teams/:teamId'),
     (0, swagger_1.ApiOperation)({ summary: 'Get team dashboard stats' }),
     __param(0, (0, common_1.Param)('teamId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], DashboardController.prototype, "getTeamStats", null);
 exports.DashboardController = DashboardController = __decorate([

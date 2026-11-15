@@ -58,7 +58,12 @@ let DashboardService = class DashboardService {
             recentActivity,
         };
     }
-    async getTeamStats(teamId) {
+    async getTeamStats(teamId, userId) {
+        const member = await this.prisma.teamMember.findUnique({
+            where: { userId_teamId: { userId, teamId } },
+        });
+        if (!member)
+            throw new common_1.ForbiddenException('Not a member of this team');
         const [totalTasks, tasksByStatus, tasksByPriority, membersCount, projectsCount, topContributors,] = await Promise.all([
             this.prisma.task.count({ where: { project: { teamId } } }),
             this.prisma.task.groupBy({
@@ -89,12 +94,13 @@ let DashboardService = class DashboardService {
             priority,
             count: tasksByPriority.find((t) => t.priority === priority)?._count.priority ?? 0,
         }));
-        const enrichedContributors = await Promise.all(topContributors.map(async (c) => {
-            const user = await this.prisma.user.findUnique({
-                where: { id: c.assigneeId },
-                select: { id: true, name: true, avatar: true },
-            });
-            return { user, tasksCompleted: c._count.assigneeId };
+        const users = await this.prisma.user.findMany({
+            where: { id: { in: topContributors.map((c) => c.assigneeId) } },
+            select: { id: true, name: true, avatar: true },
+        });
+        const enrichedContributors = topContributors.map((c) => ({
+            user: users.find((u) => u.id === c.assigneeId) ?? null,
+            tasksCompleted: c._count.assigneeId,
         }));
         return {
             totalTasks,

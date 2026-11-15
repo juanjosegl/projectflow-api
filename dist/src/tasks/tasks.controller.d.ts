@@ -20,12 +20,12 @@ export declare class TasksController {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.TaskStatus;
+        projectId: string;
         title: string;
         priority: import(".prisma/client").$Enums.TaskPriority;
+        assigneeId: string | null;
         dueDate: Date | null;
         position: number;
-        projectId: string;
-        assigneeId: string | null;
         creatorId: string;
     })[]>;
     create(projectId: string, user: {
@@ -46,12 +46,12 @@ export declare class TasksController {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.TaskStatus;
+        projectId: string;
         title: string;
         priority: import(".prisma/client").$Enums.TaskPriority;
+        assigneeId: string | null;
         dueDate: Date | null;
         position: number;
-        projectId: string;
-        assigneeId: string | null;
         creatorId: string;
     }>;
     findByProject(projectId: string, user: {
@@ -75,12 +75,12 @@ export declare class TasksController {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.TaskStatus;
+        projectId: string;
         title: string;
         priority: import(".prisma/client").$Enums.TaskPriority;
+        assigneeId: string | null;
         dueDate: Date | null;
         position: number;
-        projectId: string;
-        assigneeId: string | null;
         creatorId: string;
     })[]>;
     findOne(taskId: string, user: {
@@ -143,12 +143,12 @@ export declare class TasksController {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.TaskStatus;
+        projectId: string;
         title: string;
         priority: import(".prisma/client").$Enums.TaskPriority;
+        assigneeId: string | null;
         dueDate: Date | null;
         position: number;
-        projectId: string;
-        assigneeId: string | null;
         creatorId: string;
     }>;
     update(taskId: string, user: {
@@ -165,12 +165,12 @@ export declare class TasksController {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.TaskStatus;
+        projectId: string;
         title: string;
         priority: import(".prisma/client").$Enums.TaskPriority;
+        assigneeId: string | null;
         dueDate: Date | null;
         position: number;
-        projectId: string;
-        assigneeId: string | null;
         creatorId: string;
     }>;
     remove(taskId: string, user: {

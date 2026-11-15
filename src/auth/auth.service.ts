@@ -10,6 +10,11 @@ import { EmailService } from '../email/email.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcryptjs';
+import { randomUUID, createHash } from 'crypto';
+
+// bcrypt only reads 72 bytes, and every JWT of a user shares that prefix; refresh
+// tokens are high-entropy, so a plain SHA-256 digest is the right fit.
+export const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
 
 @Injectable()
 export class AuthService {
@@ -121,7 +126,7 @@ export class AuthService {
         secret: this.configService.get('JWT_SECRET'),
         expiresIn: this.configService.get('JWT_EXPIRES_IN'),
       }),
-      this.jwtService.signAsync(payload, {
+      this.jwtService.signAsync({ ...payload, jti: randomUUID() }, {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
         expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN'),
       }),
@@ -130,10 +135,9 @@ export class AuthService {
   }
 
   private async saveRefreshToken(userId: string, token: string) {
-    const hashed = await bcrypt.hash(token, 10);
     await this.prisma.user.update({
       where: { id: userId },
-      data: { refreshToken: hashed },
+      data: { refreshToken: hashToken(token) },
     });
   }
 }

@@ -51,6 +51,16 @@ export class TeamsController {
     return this.teamsService.acceptInvitation(token, user.id);
   }
 
+  @Post('invitations/:token/decline')
+  declineInvitation(@Param('token') token: string, @CurrentUser() user: { id: string }) {
+    return this.teamsService.declineInvitation(token, user.id);
+  }
+
+  @Delete(':teamId/leave')
+  leave(@Param('teamId') teamId: string, @CurrentUser() user: { id: string }) {
+    return this.teamsService.leaveTeam(teamId, user.id);
+  }
+
   @Patch(':teamId/members/:memberId/role')
   updateRole(
     @Param('teamId') teamId: string,

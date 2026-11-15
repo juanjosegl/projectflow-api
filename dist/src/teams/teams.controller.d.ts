@@ -127,22 +127,16 @@ export declare class TeamsController {
         senderId: string;
     }>;
     getInvitation(token: string): Promise<{
+        email: string;
+        role: import(".prisma/client").$Enums.Role;
         team: {
             name: string;
         };
+        status: import(".prisma/client").$Enums.InvitationStatus;
+        expiresAt: Date;
         sender: {
             name: string;
         };
-    } & {
-        id: string;
-        email: string;
-        createdAt: Date;
-        role: import(".prisma/client").$Enums.Role;
-        teamId: string;
-        status: import(".prisma/client").$Enums.InvitationStatus;
-        token: string;
-        expiresAt: Date;
-        senderId: string;
     }>;
     acceptInvitation(token: string, user: {
         id: string;
@@ -150,6 +144,16 @@ export declare class TeamsController {
         message: string;
         teamId: string;
         teamName: string;
+    }>;
+    declineInvitation(token: string, user: {
+        id: string;
+    }): Promise<{
+        message: string;
+    }>;
+    leave(teamId: string, user: {
+        id: string;
+    }): Promise<{
+        message: string;
     }>;
     updateRole(teamId: string, memberId: string, user: {
         id: string;

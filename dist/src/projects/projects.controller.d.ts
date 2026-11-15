@@ -89,12 +89,12 @@ export declare class ProjectsController {
             updatedAt: Date;
             description: string | null;
             status: import(".prisma/client").$Enums.TaskStatus;
+            projectId: string;
             title: string;
             priority: import(".prisma/client").$Enums.TaskPriority;
+            assigneeId: string | null;
             dueDate: Date | null;
             position: number;
-            projectId: string;
-            assigneeId: string | null;
             creatorId: string;
         })[];
         _count: {

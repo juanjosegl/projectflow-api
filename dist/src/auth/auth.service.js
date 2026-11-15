@@ -42,13 +42,16 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AuthService = void 0;
+exports.AuthService = exports.hashToken = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../prisma/prisma.service");
 const email_service_1 = require("../email/email.service");
 const bcrypt = __importStar(require("bcryptjs"));
+const crypto_1 = require("crypto");
+const hashToken = (token) => (0, crypto_1.createHash)('sha256').update(token).digest('hex');
+exports.hashToken = hashToken;
 let AuthService = class AuthService {
     constructor(prisma, jwtService, configService, emailService) {
         this.prisma = prisma;
@@ -144,7 +147,7 @@ let AuthService = class AuthService {
                 secret: this.configService.get('JWT_SECRET'),
                 expiresIn: this.configService.get('JWT_EXPIRES_IN'),
             }),
-            this.jwtService.signAsync(payload, {
+            this.jwtService.signAsync({ ...payload, jti: (0, crypto_1.randomUUID)() }, {
                 secret: this.configService.get('JWT_REFRESH_SECRET'),
                 expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN'),
             }),
@@ -152,10 +155,9 @@ let AuthService = class AuthService {
         return { accessToken, refreshToken };
     }
     async saveRefreshToken(userId, token) {
-        const hashed = await bcrypt.hash(token, 10);
         await this.prisma.user.update({
             where: { id: userId },
-            data: { refreshToken: hashed },
+            data: { refreshToken: (0, exports.hashToken)(token) },
         });
     }
 };

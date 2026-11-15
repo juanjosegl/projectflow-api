@@ -15,6 +15,8 @@ const passport_1 = require("@nestjs/passport");
 const passport_jwt_1 = require("passport-jwt");
 const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../../prisma/prisma.service");
+const crypto_1 = require("crypto");
+const auth_service_1 = require("../auth.service");
 let JwtRefreshStrategy = class JwtRefreshStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy, 'jwt-refresh') {
     constructor(configService, prisma) {
         super({
@@ -33,9 +35,13 @@ let JwtRefreshStrategy = class JwtRefreshStrategy extends (0, passport_1.Passpor
         if (!refreshToken)
             throw new common_1.UnauthorizedException();
         const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
-        if (!user || !user.refreshToken)
+        if (!user || !user.refreshToken || !user.isActive)
             throw new common_1.UnauthorizedException();
-        return user;
+        const given = Buffer.from((0, auth_service_1.hashToken)(refreshToken));
+        const stored = Buffer.from(user.refreshToken);
+        if (given.length !== stored.length || !(0, crypto_1.timingSafeEqual)(given, stored))
+            throw new common_1.UnauthorizedException();
+        return { id: user.id };
     }
 };
 exports.JwtRefreshStrategy = JwtRefreshStrategy;

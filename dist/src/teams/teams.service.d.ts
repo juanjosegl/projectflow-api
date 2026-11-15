@@ -135,6 +135,13 @@ export declare class TeamsService {
     removeMember(teamId: string, requesterId: string, memberId: string): Promise<{
         message: string;
     }>;
+    declineInvitation(token: string, userId: string): Promise<{
+        message: string;
+    }>;
+    leaveTeam(teamId: string, userId: string): Promise<{
+        message: string;
+    }>;
+    private assertNotLastAdmin;
     assertRole(teamId: string, userId: string, roles: Role[]): Promise<{
         id: string;
         role: import(".prisma/client").$Enums.Role;
@@ -143,21 +150,15 @@ export declare class TeamsService {
         teamId: string;
     }>;
     getInvitationByToken(token: string): Promise<{
+        email: string;
+        role: import(".prisma/client").$Enums.Role;
         team: {
             name: string;
         };
+        status: import(".prisma/client").$Enums.InvitationStatus;
+        expiresAt: Date;
         sender: {
             name: string;
         };
-    } & {
-        id: string;
-        email: string;
-        createdAt: Date;
-        role: import(".prisma/client").$Enums.Role;
-        teamId: string;
-        status: import(".prisma/client").$Enums.InvitationStatus;
-        token: string;
-        expiresAt: Date;
-        senderId: string;
     }>;
 }

@@ -7,6 +7,7 @@ export declare class NotificationsController {
     }): Promise<({
         task: {
             id: string;
+            projectId: string;
             title: string;
         };
     } & {

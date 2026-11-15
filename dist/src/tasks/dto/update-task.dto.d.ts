@@ -4,7 +4,7 @@ export declare class UpdateTaskDto {
     description?: string;
     status?: TaskStatus;
     priority?: TaskPriority;
-    dueDate?: string;
-    assigneeId?: string;
+    dueDate?: string | null;
+    assigneeId?: string | null;
     position?: number;
 }

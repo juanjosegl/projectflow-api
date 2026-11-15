@@ -5,6 +5,7 @@ export declare class NotificationsService {
     findMine(userId: string): Promise<({
         task: {
             id: string;
+            projectId: string;
             title: string;
         };
     } & {

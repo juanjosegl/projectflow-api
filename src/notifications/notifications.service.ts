@@ -8,7 +8,7 @@ export class NotificationsService {
   async findMine(userId: string) {
     return this.prisma.notification.findMany({
       where: { userId },
-      include: { task: { select: { id: true, title: true } } },
+      include: { task: { select: { id: true, title: true, projectId: true } } },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });

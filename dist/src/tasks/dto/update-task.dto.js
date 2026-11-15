@@ -44,13 +44,13 @@ __decorate([
     __metadata("design:type", String)
 ], UpdateTaskDto.prototype, "priority", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)(),
+    (0, swagger_1.ApiPropertyOptional)({ nullable: true, description: 'null clears the due date' }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsDateString)(),
     __metadata("design:type", String)
 ], UpdateTaskDto.prototype, "dueDate", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)(),
+    (0, swagger_1.ApiPropertyOptional)({ nullable: true, description: 'null unassigns the task' }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
@@ -59,6 +59,7 @@ __decorate([
     (0, swagger_1.ApiPropertyOptional)(),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(0),
     __metadata("design:type", Number)
 ], UpdateTaskDto.prototype, "position", void 0);
 //# sourceMappingURL=update-task.dto.js.map

@@ -19,10 +19,16 @@ let ProjectsService = class ProjectsService {
         this.prisma = prisma;
         this.teamsService = teamsService;
     }
+    dates(dto) {
+        return {
+            startDate: dto.startDate ? new Date(dto.startDate) : undefined,
+            endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+        };
+    }
     async create(teamId, userId, dto) {
         await this.teamsService.assertRole(teamId, userId, [client_1.Role.ADMIN, client_1.Role.MANAGER]);
         return this.prisma.project.create({
-            data: { ...dto, teamId },
+            data: { ...dto, ...this.dates(dto), teamId },
             include: { _count: { select: { tasks: true } } },
         });
     }
@@ -77,7 +83,7 @@ let ProjectsService = class ProjectsService {
         if (!project)
             throw new common_1.NotFoundException('Project not found');
         await this.teamsService.assertRole(project.teamId, userId, [client_1.Role.ADMIN, client_1.Role.MANAGER]);
-        return this.prisma.project.update({ where: { id: projectId }, data: dto });
+        return this.prisma.project.update({ where: { id: projectId }, data: { ...dto, ...this.dates(dto) } });
     }
     async remove(projectId, userId) {
         const project = await this.prisma.project.findUnique({ where: { id: projectId } });

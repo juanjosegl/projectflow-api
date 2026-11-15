@@ -47,6 +47,12 @@ let TeamsController = class TeamsController {
     acceptInvitation(token, user) {
         return this.teamsService.acceptInvitation(token, user.id);
     }
+    declineInvitation(token, user) {
+        return this.teamsService.declineInvitation(token, user.id);
+    }
+    leave(teamId, user) {
+        return this.teamsService.leaveTeam(teamId, user.id);
+    }
     updateRole(teamId, memberId, user, dto) {
         return this.teamsService.updateMemberRole(teamId, user.id, memberId, dto);
     }
@@ -110,6 +116,22 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], TeamsController.prototype, "acceptInvitation", null);
+__decorate([
+    (0, common_1.Post)('invitations/:token/decline'),
+    __param(0, (0, common_1.Param)('token')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], TeamsController.prototype, "declineInvitation", null);
+__decorate([
+    (0, common_1.Delete)(':teamId/leave'),
+    __param(0, (0, common_1.Param)('teamId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], TeamsController.prototype, "leave", null);
 __decorate([
     (0, common_1.Patch)(':teamId/members/:memberId/role'),
     __param(0, (0, common_1.Param)('teamId')),

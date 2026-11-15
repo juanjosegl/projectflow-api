@@ -61,6 +61,10 @@ export class TeamsService {
       where: { teamId, email: dto.email, status: 'PENDING' },
     });
     if (existing) throw new ConflictException('Invitation already sent to this email');
+    const alreadyMember = await this.prisma.teamMember.findFirst({
+      where: { teamId, user: { email: dto.email } },
+    });
+    if (alreadyMember) throw new ConflictException('This user is already a member of the team');
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
@@ -83,7 +87,6 @@ export class TeamsService {
       });
     }
 
-    // In-app notification with token in message for deep linking
     const invitedUser = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (invitedUser) {
       await this.prisma.notification.create({
@@ -92,18 +95,7 @@ export class TeamsService {
           type: 'TEAM_INVITATION',
           title: 'Team Invitation',
           message: `${sender?.name} invited you to join ${team?.name} as ${dto.role}`,
-          // Store token in taskId field temporarily — we'll use a metadata approach
         },
-      });
-
-      // Store invitation token in a way we can retrieve it
-      await this.prisma.notification.updateMany({
-        where: {
-          userId: invitedUser.id,
-          type: 'TEAM_INVITATION',
-          message: { contains: invitation.token.substring(0, 8) },
-        },
-        data: {},
       });
     }
 
@@ -154,6 +146,7 @@ export class TeamsService {
 
   async updateMemberRole(teamId: string, requesterId: string, memberId: string, dto: UpdateMemberRoleDto) {
     await this.assertRole(teamId, requesterId, [Role.ADMIN]);
+    if (dto.role !== Role.ADMIN) await this.assertNotLastAdmin(teamId, memberId);
     return this.prisma.teamMember.update({
       where: { userId_teamId: { userId: memberId, teamId } },
       data: { role: dto.role },
@@ -162,10 +155,37 @@ export class TeamsService {
 
   async removeMember(teamId: string, requesterId: string, memberId: string) {
     await this.assertRole(teamId, requesterId, [Role.ADMIN]);
+    await this.assertNotLastAdmin(teamId, memberId);
     await this.prisma.teamMember.delete({
       where: { userId_teamId: { userId: memberId, teamId } },
     });
     return { message: 'Member removed successfully' };
+  }
+
+  async declineInvitation(token: string, userId: string) {
+    const invitation = await this.prisma.invitation.findUnique({ where: { token } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!invitation || invitation.status !== 'PENDING') throw new NotFoundException('Invalid or expired invitation');
+    if (user?.email !== invitation.email) throw new ForbiddenException('This invitation is not for your account');
+    await this.prisma.invitation.update({ where: { token }, data: { status: 'REJECTED' } });
+    return { message: 'Invitation declined' };
+  }
+
+  async leaveTeam(teamId: string, userId: string) {
+    await this.assertNotLastAdmin(teamId, userId);
+    await this.prisma.teamMember.delete({ where: { userId_teamId: { userId, teamId } } });
+    return { message: 'You left the team' };
+  }
+
+  // A team must always keep at least one admin.
+  private async assertNotLastAdmin(teamId: string, memberId: string) {
+    const member = await this.prisma.teamMember.findUnique({
+      where: { userId_teamId: { userId: memberId, teamId } },
+    });
+    if (!member) throw new NotFoundException('Member not found');
+    if (member.role !== Role.ADMIN) return;
+    const admins = await this.prisma.teamMember.count({ where: { teamId, role: Role.ADMIN } });
+    if (admins <= 1) throw new ConflictException('A team needs at least one admin');
   }
 
   async assertRole(teamId: string, userId: string, roles: Role[]) {
@@ -179,7 +199,8 @@ export class TeamsService {
   async getInvitationByToken(token: string) {
     const invitation = await this.prisma.invitation.findUnique({
       where: { token },
-      include: {
+      select: {
+        email: true, role: true, status: true, expiresAt: true,
         team: { select: { name: true } },
         sender: { select: { name: true } },
       },

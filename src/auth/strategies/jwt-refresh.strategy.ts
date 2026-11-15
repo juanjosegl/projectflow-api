@@ -4,6 +4,8 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
+import { timingSafeEqual } from 'crypto';
+import { hashToken } from '../auth.service';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
@@ -26,7 +28,11 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     const refreshToken = req?.cookies?.['refresh_token'];
     if (!refreshToken) throw new UnauthorizedException();
     const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
-    if (!user || !user.refreshToken) throw new UnauthorizedException();
-    return user;
+    // Only the latest issued refresh token is valid (rotation + logout revocation).
+    if (!user || !user.refreshToken || !user.isActive) throw new UnauthorizedException();
+    const given = Buffer.from(hashToken(refreshToken));
+    const stored = Buffer.from(user.refreshToken);
+    if (given.length !== stored.length || !timingSafeEqual(given, stored)) throw new UnauthorizedException();
+    return { id: user.id };
   }
 }

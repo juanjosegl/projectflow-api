@@ -49,7 +49,7 @@ let AuthController = class AuthController {
         res.redirect(redirect);
     }
     async logout(user, res) {
-        res.clearCookie('refresh_token');
+        res.clearCookie('refresh_token', this.cookieOptions());
         return this.authService.logout(user.id);
     }
     async refresh(req, res) {
@@ -61,13 +61,12 @@ let AuthController = class AuthController {
     me(user) {
         return user;
     }
+    cookieOptions() {
+        const prod = process.env.NODE_ENV === 'production';
+        return { httpOnly: true, secure: prod, sameSite: (prod ? 'none' : 'lax'), path: '/' };
+    }
     setRefreshCookie(res, token) {
-        res.cookie('refresh_token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
+        res.cookie('refresh_token', token, { ...this.cookieOptions(), maxAge: 7 * 24 * 60 * 60 * 1000 });
     }
 };
 exports.AuthController = AuthController;

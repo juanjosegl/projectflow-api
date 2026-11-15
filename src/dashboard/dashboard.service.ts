@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TaskStatus, TaskPriority } from '@prisma/client';
 
@@ -56,7 +56,12 @@ export class DashboardService {
     };
   }
 
-  async getTeamStats(teamId: string) {
+  async getTeamStats(teamId: string, userId: string) {
+    const member = await this.prisma.teamMember.findUnique({
+      where: { userId_teamId: { userId, teamId } },
+    });
+    if (!member) throw new ForbiddenException('Not a member of this team');
+
     const [
       totalTasks,
       tasksByStatus,
@@ -98,15 +103,14 @@ export class DashboardService {
     }));
 
     // Enrich top contributors with user data
-    const enrichedContributors = await Promise.all(
-      topContributors.map(async (c) => {
-        const user = await this.prisma.user.findUnique({
-          where: { id: c.assigneeId! },
-          select: { id: true, name: true, avatar: true },
-        });
-        return { user, tasksCompleted: c._count.assigneeId };
-      }),
-    );
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: topContributors.map((c) => c.assigneeId!) } },
+      select: { id: true, name: true, avatar: true },
+    });
+    const enrichedContributors = topContributors.map((c) => ({
+      user: users.find((u) => u.id === c.assigneeId) ?? null,
+      tasksCompleted: c._count.assigneeId,
+    }));
 
     return {
       totalTasks,

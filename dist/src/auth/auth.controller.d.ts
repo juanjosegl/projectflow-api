@@ -49,5 +49,6 @@ export declare class AuthController {
         accessToken: string;
     }>;
     me(user: unknown): unknown;
+    private cookieOptions;
     private setRefreshCookie;
 }

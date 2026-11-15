@@ -6,6 +6,7 @@ export declare class ProjectsService {
     private prisma;
     private teamsService;
     constructor(prisma: PrismaService, teamsService: TeamsService);
+    private dates;
     create(teamId: string, userId: string, dto: CreateProjectDto): Promise<{
         _count: {
             tasks: number;
@@ -85,12 +86,12 @@ export declare class ProjectsService {
             updatedAt: Date;
             description: string | null;
             status: import(".prisma/client").$Enums.TaskStatus;
+            projectId: string;
             title: string;
             priority: import(".prisma/client").$Enums.TaskPriority;
+            assigneeId: string | null;
             dueDate: Date | null;
             position: number;
-            projectId: string;
-            assigneeId: string | null;
             creatorId: string;
         })[];
         _count: {

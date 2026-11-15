@@ -19,7 +19,7 @@ export class DashboardController {
 
   @Get('teams/:teamId')
   @ApiOperation({ summary: 'Get team dashboard stats' })
-  getTeamStats(@Param('teamId') teamId: string) {
-    return this.dashboardService.getTeamStats(teamId);
+  getTeamStats(@Param('teamId') teamId: string, @CurrentUser() user: { id: string }) {
+    return this.dashboardService.getTeamStats(teamId, user.id);
   }
 }

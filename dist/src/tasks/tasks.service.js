@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TasksService = void 0;
 const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../prisma/prisma.service");
 let TasksService = class TasksService {
     constructor(prisma) {
@@ -28,21 +29,42 @@ let TasksService = class TasksService {
             throw new common_1.ForbiddenException('Access denied');
         return project;
     }
+    assertAssigneeInTeam(assigneeId, members) {
+        if (assigneeId && !members.some((m) => m.userId === assigneeId)) {
+            throw new common_1.BadRequestException('Assignee must be a member of the project team');
+        }
+    }
+    toDate(value) {
+        if (value === undefined)
+            return undefined;
+        return value === null ? null : new Date(value);
+    }
+    async notify(data) {
+        await this.prisma.notification.create({ data });
+    }
     async create(projectId, userId, dto) {
-        await this.assertProjectAccess(projectId, userId);
+        const project = await this.assertProjectAccess(projectId, userId);
+        this.assertAssigneeInTeam(dto.assigneeId, project.team.members);
         const lastTask = await this.prisma.task.findFirst({
             where: { projectId },
             orderBy: { position: 'desc' },
             select: { position: true },
         });
         const position = (lastTask?.position ?? -1) + 1;
-        return this.prisma.task.create({
-            data: { ...dto, projectId, creatorId: userId, position },
+        const task = await this.prisma.task.create({
+            data: { ...dto, dueDate: this.toDate(dto.dueDate), projectId, creatorId: userId, position },
             include: {
                 assignee: { select: { id: true, name: true, avatar: true } },
                 creator: { select: { id: true, name: true } },
             },
         });
+        if (task.assigneeId && task.assigneeId !== userId) {
+            await this.notify({
+                userId: task.assigneeId, taskId: task.id, type: 'TASK_ASSIGNED',
+                title: 'New task assigned', message: `You were assigned "${task.title}" in ${project.name}`,
+            });
+        }
+        return task;
     }
     async findByProject(projectId, userId) {
         await this.assertProjectAccess(projectId, userId);
@@ -86,11 +108,25 @@ let TasksService = class TasksService {
         const isMember = task.project.team.members.some((m) => m.userId === userId);
         if (!isMember)
             throw new common_1.ForbiddenException('Access denied');
-        return this.prisma.task.update({
+        this.assertAssigneeInTeam(dto.assigneeId, task.project.team.members);
+        const updated = await this.prisma.task.update({
             where: { id: taskId },
-            data: dto,
+            data: { ...dto, dueDate: this.toDate(dto.dueDate) },
             include: { assignee: { select: { id: true, name: true, avatar: true } } },
         });
+        if (dto.assigneeId && dto.assigneeId !== task.assigneeId && dto.assigneeId !== userId) {
+            await this.notify({
+                userId: dto.assigneeId, taskId, type: 'TASK_ASSIGNED',
+                title: 'New task assigned', message: `You were assigned "${updated.title}" in ${task.project.name}`,
+            });
+        }
+        if (dto.status && dto.status !== task.status && updated.assigneeId && updated.assigneeId !== userId) {
+            await this.notify({
+                userId: updated.assigneeId, taskId, type: 'TASK_STATUS_CHANGED',
+                title: 'Task status changed', message: `"${updated.title}" moved to ${dto.status.replace('_', ' ')}`,
+            });
+        }
+        return updated;
     }
     async remove(taskId, userId) {
         const task = await this.prisma.task.findUnique({
@@ -110,7 +146,7 @@ let TasksService = class TasksService {
     }
     async getMyTasks(userId) {
         return this.prisma.task.findMany({
-            where: { assigneeId: userId, status: { not: 'DONE' } },
+            where: { assigneeId: userId, status: { not: client_1.TaskStatus.DONE } },
             include: {
                 project: { select: { id: true, name: true } },
                 _count: { select: { comments: true } },

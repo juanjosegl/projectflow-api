@@ -20,6 +20,7 @@ const comments_module_1 = require("./comments/comments.module");
 const notifications_module_1 = require("./notifications/notifications.module");
 const dashboard_module_1 = require("./dashboard/dashboard.module");
 const upload_module_1 = require("./upload/upload.module");
+const app_controller_1 = require("./app.controller");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -39,6 +40,7 @@ exports.AppModule = AppModule = __decorate([
             dashboard_module_1.DashboardModule,
             upload_module_1.UploadModule,
         ],
+        controllers: [app_controller_1.AppController],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

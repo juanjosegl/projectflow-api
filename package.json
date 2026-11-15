@@ -5,14 +5,15 @@
   "scripts": {
     "build": "nest build",
     "dev": "nest start --watch",
-    "start": "node dist/main",
+    "start": "node dist/src/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "type-check": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
-    "build:render": "tsc -p tsconfig.build.json"
+    "db:seed": "prisma db seed",
+    "build:render": "tsc -p tsconfig.build.json",
+    "test:smoke": "node test/smoke.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -56,5 +57,8 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }

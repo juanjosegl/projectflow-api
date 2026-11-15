@@ -12,10 +12,18 @@ export class ProjectsService {
     private teamsService: TeamsService,
   ) {}
 
+  // Prisma rejects date-only strings ("2024-01-01"), so convert before writing.
+  private dates(dto: { startDate?: string; endDate?: string }) {
+    return {
+      startDate: dto.startDate ? new Date(dto.startDate) : undefined,
+      endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+    };
+  }
+
   async create(teamId: string, userId: string, dto: CreateProjectDto) {
     await this.teamsService.assertRole(teamId, userId, [Role.ADMIN, Role.MANAGER]);
     return this.prisma.project.create({
-      data: { ...dto, teamId },
+      data: { ...dto, ...this.dates(dto), teamId },
       include: { _count: { select: { tasks: true } } },
     });
   }
@@ -70,7 +78,7 @@ export class ProjectsService {
     const project = await this.prisma.project.findUnique({ where: { id: projectId } });
     if (!project) throw new NotFoundException('Project not found');
     await this.teamsService.assertRole(project.teamId, userId, [Role.ADMIN, Role.MANAGER]);
-    return this.prisma.project.update({ where: { id: projectId }, data: dto });
+    return this.prisma.project.update({ where: { id: projectId }, data: { ...dto, ...this.dates(dto) } });
   }
 
   async remove(projectId: string, userId: string) {
