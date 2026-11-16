@@ -1,4 +1,14 @@
-import { IsString, IsOptional, MinLength, MaxLength, IsEnum, IsDateString, IsUUID, IsInt, Min } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  MinLength,
+  MaxLength,
+  IsEnum,
+  IsDateString,
+  IsUUID,
+  IsInt,
+  Min,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskPriority, TaskStatus } from '@prisma/client';
 
@@ -26,12 +36,18 @@ export class UpdateTaskDto {
   @IsEnum(TaskPriority)
   priority?: TaskPriority;
 
-  @ApiPropertyOptional({ nullable: true, description: 'null clears the due date' })
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'null clears the due date',
+  })
   @IsOptional()
   @IsDateString()
   dueDate?: string | null;
 
-  @ApiPropertyOptional({ nullable: true, description: 'null unassigns the task' })
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'null unassigns the task',
+  })
   @IsOptional()
   @IsUUID()
   assigneeId?: string | null;

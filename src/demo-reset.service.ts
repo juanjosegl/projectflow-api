@@ -14,7 +14,8 @@ export class DemoResetService implements OnApplicationBootstrap {
   constructor(private prisma: PrismaService) {}
 
   async onApplicationBootstrap() {
-    const flag = process.env.DEMO_RESET_ON_BOOT ?? (process.env.RENDER ? 'true' : 'false');
+    const flag =
+      process.env.DEMO_RESET_ON_BOOT ?? (process.env.RENDER ? 'true' : 'false');
     if (flag !== 'true') return;
     try {
       await seedDemo(this.prisma);

@@ -4,7 +4,13 @@ import { Resend } from 'resend';
 
 // User-controlled text (names, team names) must not inject HTML into emails.
 const esc = (v: string) =>
-  v.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+  v.replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[
+        c
+      ],
+  );
 
 @Injectable()
 export class EmailService {
@@ -17,7 +23,10 @@ export class EmailService {
     // Email is optional so the API runs locally without a Resend account.
     const key = config.get<string>('RESEND_API_KEY');
     this.resend = key ? new Resend(key) : null;
-    if (!key) this.logger.warn('RESEND_API_KEY not set: emails will be logged, not sent');
+    if (!key)
+      this.logger.warn(
+        'RESEND_API_KEY not set: emails will be logged, not sent',
+      );
     this.appUrl = config.get('APP_URL') ?? 'http://localhost:3000';
   }
 
@@ -29,7 +38,10 @@ export class EmailService {
     token: string;
   }) {
     const acceptUrl = `${this.appUrl}/invitations/${params.token}`;
-    if (!this.resend) return this.logger.log(`[email skipped] invitation for ${params.to}: ${acceptUrl}`);
+    if (!this.resend)
+      return this.logger.log(
+        `[email skipped] invitation for ${params.to}: ${acceptUrl}`,
+      );
     try {
       await this.resend.emails.send({
         from: this.from,
@@ -64,7 +76,8 @@ export class EmailService {
 
   async sendWelcomeEmail(params: { to: string; name: string }) {
     const loginUrl = `${this.appUrl}/login`;
-    if (!this.resend) return this.logger.log(`[email skipped] welcome email for ${params.to}`);
+    if (!this.resend)
+      return this.logger.log(`[email skipped] welcome email for ${params.to}`);
     try {
       await this.resend.emails.send({
         from: this.from,

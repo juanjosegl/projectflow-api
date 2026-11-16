@@ -1,25 +1,26 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '../common/decorators/current-user.decorator';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('dashboard')
 export class DashboardController {
   constructor(private dashboardService: DashboardService) {}
 
   @Get('me')
   @ApiOperation({ summary: 'Get my personal dashboard stats' })
-  getMyStats(@CurrentUser() user: { id: string }) {
+  getMyStats(@CurrentUser() user: AuthUser) {
     return this.dashboardService.getMyStats(user.id);
   }
 
   @Get('teams/:teamId')
   @ApiOperation({ summary: 'Get team dashboard stats' })
-  getTeamStats(@Param('teamId') teamId: string, @CurrentUser() user: { id: string }) {
+  getTeamStats(@Param('teamId') teamId: string, @CurrentUser() user: AuthUser) {
     return this.dashboardService.getTeamStats(teamId, user.id);
   }
 }

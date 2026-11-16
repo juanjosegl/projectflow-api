@@ -1,71 +1,105 @@
 import {
-  Controller, Post, Body, UseGuards, Req,
-  Res, HttpCode, HttpStatus, Get
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
-import type { Request, Response } from 'express';
-import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { Public } from '../common/decorators/public.decorator';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { ConfigService } from '@nestjs/config';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
+import type { CookieOptions, Request, Response } from 'express';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '../common/decorators/current-user.decorator';
+import { Public } from '../common/decorators/public.decorator';
+import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import type { GoogleProfile } from './strategies/google.strategy';
+
+const REFRESH_COOKIE = 'refresh_token';
+const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // matches JWT_REFRESH_EXPIRES_IN=7d
+
+// Credential endpoints get a tighter limit than the global one to slow down brute force.
+const CREDENTIALS_THROTTLE = { default: { limit: 10, ttl: 60_000 } };
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
-    private authService: AuthService,
-    private configService: ConfigService,
+    private readonly authService: AuthService,
+    private readonly config: ConfigService,
   ) {}
 
   @Public()
+  @Throttle(CREDENTIALS_THROTTLE)
   @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.register(dto);
-    this.setRefreshCookie(res, result.refreshToken);
-    return { user: result.user, accessToken: result.accessToken };
+  @ApiOperation({ summary: 'Create an account and start a session' })
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { user, accessToken, refreshToken } =
+      await this.authService.register(dto);
+    this.setRefreshCookie(res, refreshToken);
+    return { user, accessToken };
   }
 
   @Public()
+  @Throttle(CREDENTIALS_THROTTLE)
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login with email and password' })
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.login(dto);
-    this.setRefreshCookie(res, result.refreshToken);
-    return { user: result.user, accessToken: result.accessToken };
+  @ApiOperation({ summary: 'Sign in with email and password' })
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { user, accessToken, refreshToken } =
+      await this.authService.login(dto);
+    this.setRefreshCookie(res, refreshToken);
+    return { user, accessToken };
   }
 
   @Public()
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  @ApiOperation({ summary: 'Initiate Google OAuth' })
-  googleAuth() {}
+  @ApiOperation({ summary: 'Start the Google sign-in flow' })
+  googleAuth() {
+    // Passport redirects to Google before this handler runs.
+  }
 
   @Public()
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
-  @ApiOperation({ summary: 'Google OAuth callback' })
+  @ApiOperation({ summary: 'Google sign-in callback' })
   async googleCallback(@Req() req: Request, @Res() res: Response) {
-    const result = await this.authService.googleLogin(req.user as any);
-    this.setRefreshCookie(res, result.refreshToken);
-    const frontendUrl = this.configService.get('FRONTEND_URL') ?? 'http://localhost:3000';
-    const redirect = result.isNew
-      ? `${frontendUrl}/auth/callback?token=${result.accessToken}&new=true`
-      : `${frontendUrl}/auth/callback?token=${result.accessToken}`;
-    res.redirect(redirect);
+    const { accessToken, refreshToken, isNew } =
+      await this.authService.googleLogin(req.user as GoogleProfile);
+    this.setRefreshCookie(res, refreshToken);
+    // The token goes in the URL fragment, which browsers never send to servers or in Referer headers.
+    const fragment = new URLSearchParams({ token: accessToken });
+    if (isNew) fragment.set('new', 'true');
+    res.redirect(
+      `${this.config.getOrThrow<string>('FRONTEND_URL')}/auth/callback#${fragment.toString()}`,
+    );
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  async logout(@CurrentUser() user: { id: string }, @Res({ passthrough: true }) res: Response) {
-    res.clearCookie('refresh_token', this.cookieOptions());
+  @ApiOperation({ summary: 'Revoke the refresh token and clear its cookie' })
+  async logout(
+    @CurrentUser() user: AuthUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    res.clearCookie(REFRESH_COOKIE, this.cookieOptions());
     return this.authService.logout(user.id);
   }
 
@@ -73,29 +107,44 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt-refresh'))
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const user = req.user as { id: string };
-    const result = await this.authService.refresh(user.id);
-    this.setRefreshCookie(res, result.refreshToken);
-    return { accessToken: result.accessToken };
+  @ApiOperation({
+    summary: 'Exchange the refresh cookie for a new access token (rotates it)',
+  })
+  async refresh(
+    @CurrentUser() user: Pick<AuthUser, 'id'>,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { accessToken, refreshToken } = await this.authService.refresh(
+      user.id,
+    );
+    this.setRefreshCookie(res, refreshToken);
+    return { accessToken };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('me')
   @ApiBearerAuth()
-  me(@CurrentUser() user: unknown) {
+  @ApiOperation({ summary: 'The signed-in user' })
+  me(@CurrentUser() user: AuthUser) {
     return user;
   }
 
   // Web (Vercel) and API (Render) live on different sites, so in production the
   // cookie must be SameSite=None + Secure or the browser never sends it to /refresh.
-  private cookieOptions() {
+  private cookieOptions(): CookieOptions {
     // RENDER is set by Render itself, so this holds even if NODE_ENV was never configured there.
     const prod = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
-    return { httpOnly: true, secure: prod, sameSite: (prod ? 'none' : 'lax') as 'none' | 'lax', path: '/' };
+    return {
+      httpOnly: true,
+      secure: prod,
+      sameSite: prod ? 'none' : 'lax',
+      path: '/',
+    };
   }
 
   private setRefreshCookie(res: Response, token: string) {
-    res.cookie('refresh_token', token, { ...this.cookieOptions(), maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.cookie(REFRESH_COOKIE, token, {
+      ...this.cookieOptions(),
+      maxAge: REFRESH_COOKIE_MAX_AGE_MS,
+    });
   }
 }

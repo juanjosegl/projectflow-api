@@ -11,10 +11,12 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID, createHash } from 'crypto';
+import type { GoogleProfile } from './strategies/google.strategy';
 
 // bcrypt only reads 72 bytes, and every JWT of a user shares that prefix; refresh
 // tokens are high-entropy, so a plain SHA-256 digest is the right fit.
-export const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
+export const hashToken = (token: string) =>
+  createHash('sha256').update(token).digest('hex');
 
 @Injectable()
 export class AuthService {
@@ -26,7 +28,9 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const exists = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const exists = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
     if (exists) throw new ConflictException('Email already registered');
 
     const password = await bcrypt.hash(dto.password, 12);
@@ -42,21 +46,33 @@ export class AuthService {
         location: dto.location,
       },
       select: {
-        id: true, name: true, email: true, avatar: true,
-        jobTitle: true, location: true, createdAt: true,
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+        jobTitle: true,
+        location: true,
+        createdAt: true,
       },
     });
 
     const tokens = await this.generateTokens(user.id, user.email);
     await this.saveRefreshToken(user.id, tokens.refreshToken);
-    this.emailService.sendWelcomeEmail({ to: user.email, name: user.name });
+    // Fire-and-forget: EmailService logs its own failures and must not block sign-up.
+    void this.emailService.sendWelcomeEmail({
+      to: user.email,
+      name: user.name,
+    });
 
     return { user, ...tokens };
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
-    if (!user || !user.password) throw new UnauthorizedException('Invalid credentials');
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (!user?.password || !user.isActive)
+      throw new UnauthorizedException('Invalid credentials');
 
     const valid = await bcrypt.compare(dto.password, user.password);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
@@ -64,19 +80,16 @@ export class AuthService {
     const tokens = await this.generateTokens(user.id, user.email);
     await this.saveRefreshToken(user.id, tokens.refreshToken);
 
-    const { password: _, refreshToken: __, ...safeUser } = user;
+    const { password, refreshToken, ...safeUser } = user;
     return { user: safeUser, ...tokens };
   }
 
-  async googleLogin(googleUser: {
-    googleId: string;
-    email: string;
-    name: string;
-    avatar?: string;
-  }) {
+  async googleLogin(googleUser: GoogleProfile) {
     let isNew = false;
     let user = await this.prisma.user.findFirst({
-      where: { OR: [{ googleId: googleUser.googleId }, { email: googleUser.email }] },
+      where: {
+        OR: [{ googleId: googleUser.googleId }, { email: googleUser.email }],
+      },
     });
 
     if (!user) {
@@ -90,11 +103,18 @@ export class AuthService {
           provider: 'GOOGLE',
         },
       });
-      this.emailService.sendWelcomeEmail({ to: user.email, name: user.name });
+      void this.emailService.sendWelcomeEmail({
+        to: user.email,
+        name: user.name,
+      });
     } else if (!user.googleId) {
       user = await this.prisma.user.update({
         where: { id: user.id },
-        data: { googleId: googleUser.googleId, provider: 'GOOGLE', avatar: user.avatar ?? googleUser.avatar },
+        data: {
+          googleId: googleUser.googleId,
+          provider: 'GOOGLE',
+          avatar: user.avatar ?? googleUser.avatar,
+        },
       });
     }
 
@@ -126,10 +146,13 @@ export class AuthService {
         secret: this.configService.get('JWT_SECRET'),
         expiresIn: this.configService.get('JWT_EXPIRES_IN'),
       }),
-      this.jwtService.signAsync({ ...payload, jti: randomUUID() }, {
-        secret: this.configService.get('JWT_REFRESH_SECRET'),
-        expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN'),
-      }),
+      this.jwtService.signAsync(
+        { ...payload, jti: randomUUID() },
+        {
+          secret: this.configService.get('JWT_REFRESH_SECRET'),
+          expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN'),
+        },
+      ),
     ]);
     return { accessToken, refreshToken };
   }

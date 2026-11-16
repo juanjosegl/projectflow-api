@@ -54,40 +54,40 @@ enum AuthProvider {
 }
 
 model User {
-  id             String       @id @default(uuid())
-  email          String       @unique
-  name           String
-  password       String?
-  avatar         String?
-  phone          String?
-  birthDate      DateTime?
-  bio            String?
-  jobTitle       String?
-  location       String?
-  provider       AuthProvider @default(LOCAL)
-  googleId       String?      @unique
-  isActive       Boolean      @default(true)
-  refreshToken   String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id           String       @id @default(uuid())
+  email        String       @unique
+  name         String
+  password     String?
+  avatar       String?
+  phone        String?
+  birthDate    DateTime?
+  bio          String?
+  jobTitle     String?
+  location     String?
+  provider     AuthProvider @default(LOCAL)
+  googleId     String?      @unique
+  isActive     Boolean      @default(true)
+  refreshToken String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   teamMembers     TeamMember[]
-  assignedTasks   Task[]        @relation("TaskAssignee")
-  createdTasks    Task[]        @relation("TaskCreator")
+  assignedTasks   Task[]         @relation("TaskAssignee")
+  createdTasks    Task[]         @relation("TaskCreator")
   comments        Comment[]
   notifications   Notification[]
-  invitationsSent Invitation[]  @relation("InvitationSender")
+  invitationsSent Invitation[]   @relation("InvitationSender")
 
   @@map("users")
 }
 
 model Team {
-  id          String    @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   description String?
-  slug        String    @unique
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  slug        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   members     TeamMember[]
   projects    Project[]
@@ -108,6 +108,7 @@ model TeamMember {
   team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@unique([userId, teamId])
+  @@index([teamId])
   @@map("team_members")
 }
 
@@ -120,12 +121,14 @@ model Invitation {
   expiresAt DateTime
   createdAt DateTime         @default(now())
 
-  teamId   String
-  team     Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   senderId String
   sender   User   @relation("InvitationSender", fields: [senderId], references: [id])
 
+  @@index([teamId, email])
+  @@index([email, status])
   @@map("invitations")
 }
 
@@ -144,6 +147,7 @@ model Project {
 
   tasks Task[]
 
+  @@index([teamId])
   @@map("projects")
 }
 
@@ -170,6 +174,8 @@ model Task {
   comments      Comment[]
   notifications Notification[]
 
+  @@index([projectId, position])
+  @@index([assigneeId, status])
   @@map("tasks")
 }
 
@@ -185,6 +191,7 @@ model Comment {
   authorId String
   author   User   @relation(fields: [authorId], references: [id])
 
+  @@index([taskId, createdAt])
   @@map("comments")
 }
 
@@ -202,5 +209,6 @@ model Notification {
   taskId String?
   task   Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
+  @@index([userId, createdAt])
   @@map("notifications")
 }

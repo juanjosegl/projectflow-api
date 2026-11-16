@@ -1,24 +1,30 @@
 import {
+  CallHandler,
+  ExecutionContext,
   Injectable,
   NestInterceptor,
-  ExecutionContext,
-  CallHandler,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, map } from 'rxjs';
 
-export interface Response<T> {
-  success: boolean;
+export interface ApiResponse<T> {
+  success: true;
   data: T;
   timestamp: string;
 }
 
+/** Wraps every successful response as `{ success: true, data, timestamp }`. */
 @Injectable()
-export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
+export class ResponseInterceptor<T> implements NestInterceptor<
+  T,
+  ApiResponse<T>
+> {
+  intercept(
+    _context: ExecutionContext,
+    next: CallHandler<T>,
+  ): Observable<ApiResponse<T>> {
     return next.handle().pipe(
       map((data) => ({
-        success: true,
+        success: true as const,
         data,
         timestamp: new Date().toISOString(),
       })),

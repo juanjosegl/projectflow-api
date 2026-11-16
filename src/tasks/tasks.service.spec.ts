@@ -10,7 +10,15 @@ const members = [
 const project = { id: 'p1', name: 'Website', team: { members } };
 
 function setup(task: Record<string, unknown> = {}) {
-  const stored = { id: 't1', title: 'Fix bug', status: 'TODO', assigneeId: null, creatorId: 'dev', project, ...task };
+  const stored = {
+    id: 't1',
+    title: 'Fix bug',
+    status: 'TODO',
+    assigneeId: null,
+    creatorId: 'dev',
+    project,
+    ...task,
+  };
   const prisma = {
     project: { findUnique: jest.fn().mockResolvedValue(project) },
     task: {
@@ -29,20 +37,28 @@ describe('TasksService', () => {
   describe('create', () => {
     it('blocks users outside the project team', async () => {
       const { service, prisma } = setup();
-      await expect(service.create('p1', 'stranger', { title: 'x' } as any)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(
+        service.create('p1', 'stranger', { title: 'x' } as any),
+      ).rejects.toBeInstanceOf(ForbiddenException);
       expect(prisma.task.create).not.toHaveBeenCalled();
     });
 
     it('rejects assignees who are not in the team', async () => {
       const { service } = setup();
-      await expect(service.create('p1', 'dev', { title: 'x', assigneeId: 'stranger' } as any)).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(
+        service.create('p1', 'dev', {
+          title: 'x',
+          assigneeId: 'stranger',
+        } as any),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('appends to the end of the board and notifies the assignee', async () => {
       const { service, prisma } = setup();
-      const task = await service.create('p1', 'mgr', { title: 'x', assigneeId: 'dev' } as any);
+      const task = await service.create('p1', 'mgr', {
+        title: 'x',
+        assigneeId: 'dev',
+      });
       expect(task.position).toBe(5);
       expect(prisma.notification.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ userId: 'dev', type: 'TASK_ASSIGNED' }),
@@ -51,7 +67,10 @@ describe('TasksService', () => {
 
     it('does not notify you about a task you assign to yourself', async () => {
       const { service, prisma } = setup();
-      await service.create('p1', 'dev', { title: 'x', assigneeId: 'dev' } as any);
+      await service.create('p1', 'dev', {
+        title: 'x',
+        assigneeId: 'dev',
+      });
       expect(prisma.notification.create).not.toHaveBeenCalled();
     });
   });
@@ -61,7 +80,10 @@ describe('TasksService', () => {
       const { service, prisma } = setup({ assigneeId: 'dev' });
       await service.update('t1', 'mgr', { status: 'DONE' } as any);
       expect(prisma.notification.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ userId: 'dev', type: 'TASK_STATUS_CHANGED' }),
+        data: expect.objectContaining({
+          userId: 'dev',
+          type: 'TASK_STATUS_CHANGED',
+        }),
       });
     });
 
@@ -73,7 +95,7 @@ describe('TasksService', () => {
 
     it('clears the due date when it is set to null', async () => {
       const { service, prisma } = setup();
-      await service.update('t1', 'dev', { dueDate: null } as any);
+      await service.update('t1', 'dev', { dueDate: null });
       expect(prisma.task.update.mock.calls[0][0].data.dueDate).toBeNull();
     });
   });
@@ -81,14 +103,21 @@ describe('TasksService', () => {
   describe('remove', () => {
     it("forbids a developer from deleting someone else's task", async () => {
       const { service, prisma } = setup({ creatorId: 'dev' });
-      await expect(service.remove('t1', 'dev2')).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.remove('t1', 'dev2')).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
       expect(prisma.task.delete).not.toHaveBeenCalled();
     });
 
-    it.each(['dev', 'mgr', 'admin'])('lets %s delete a task created by dev', async (userId) => {
-      const { service, prisma } = setup({ creatorId: 'dev' });
-      await service.remove('t1', userId);
-      expect(prisma.task.delete).toHaveBeenCalledWith({ where: { id: 't1' } });
-    });
+    it.each(['dev', 'mgr', 'admin'])(
+      'lets %s delete a task created by dev',
+      async (userId) => {
+        const { service, prisma } = setup({ creatorId: 'dev' });
+        await service.remove('t1', userId);
+        expect(prisma.task.delete).toHaveBeenCalledWith({
+          where: { id: 't1' },
+        });
+      },
+    );
   });
 });

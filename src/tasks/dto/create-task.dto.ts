@@ -1,4 +1,12 @@
-import { IsString, IsOptional, MinLength, MaxLength, IsEnum, IsDateString, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  MinLength,
+  MaxLength,
+  IsEnum,
+  IsDateString,
+  IsUUID,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskPriority, TaskStatus } from '@prisma/client';
 
@@ -9,7 +17,9 @@ export class CreateTaskDto {
   @MaxLength(200)
   title: string;
 
-  @ApiPropertyOptional({ example: 'Create the login page with email and password' })
+  @ApiPropertyOptional({
+    example: 'Create the login page with email and password',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(2000)

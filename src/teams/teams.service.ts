@@ -1,5 +1,8 @@
 import {
-  Injectable, NotFoundException, ForbiddenException, ConflictException,
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
@@ -16,17 +19,30 @@ export class TeamsService {
   ) {}
 
   private generateSlug(name: string): string {
-    return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now();
+    return (
+      name
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '') +
+      '-' +
+      Date.now()
+    );
   }
 
   async create(userId: string, dto: CreateTeamDto) {
     const slug = this.generateSlug(dto.name);
     return this.prisma.team.create({
       data: {
-        name: dto.name, description: dto.description, slug,
+        name: dto.name,
+        description: dto.description,
+        slug,
         members: { create: { userId, role: Role.ADMIN } },
       },
-      include: { members: { include: { user: { select: { id: true, name: true, email: true } } } } },
+      include: {
+        members: {
+          include: { user: { select: { id: true, name: true, email: true } } },
+        },
+      },
     });
   }
 
@@ -35,7 +51,10 @@ export class TeamsService {
       where: { members: { some: { userId } } },
       include: {
         _count: { select: { members: true, projects: true } },
-        members: { take: 5, include: { user: { select: { id: true, name: true, avatar: true } } } },
+        members: {
+          take: 5,
+          include: { user: { select: { id: true, name: true, avatar: true } } },
+        },
       },
     });
   }
@@ -44,8 +63,16 @@ export class TeamsService {
     const team = await this.prisma.team.findUnique({
       where: { id: teamId },
       include: {
-        members: { include: { user: { select: { id: true, name: true, email: true, avatar: true } } } },
-        projects: { select: { id: true, name: true, status: true, createdAt: true } },
+        members: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
+          },
+        },
+        projects: {
+          select: { id: true, name: true, status: true, createdAt: true },
+        },
       },
     });
     if (!team) throw new NotFoundException('Team not found');
@@ -54,17 +81,23 @@ export class TeamsService {
     return team;
   }
 
-  async inviteMember(teamId: string, requesterId: string, dto: InviteMemberDto) {
+  async inviteMember(
+    teamId: string,
+    requesterId: string,
+    dto: InviteMemberDto,
+  ) {
     await this.assertRole(teamId, requesterId, [Role.ADMIN, Role.MANAGER]);
 
     const existing = await this.prisma.invitation.findFirst({
       where: { teamId, email: dto.email, status: 'PENDING' },
     });
-    if (existing) throw new ConflictException('Invitation already sent to this email');
+    if (existing)
+      throw new ConflictException('Invitation already sent to this email');
     const alreadyMember = await this.prisma.teamMember.findFirst({
       where: { teamId, user: { email: dto.email } },
     });
-    if (alreadyMember) throw new ConflictException('This user is already a member of the team');
+    if (alreadyMember)
+      throw new ConflictException('This user is already a member of the team');
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
@@ -73,12 +106,19 @@ export class TeamsService {
       this.prisma.team.findUnique({ where: { id: teamId } }),
       this.prisma.user.findUnique({ where: { id: requesterId } }),
       this.prisma.invitation.create({
-        data: { teamId, email: dto.email, role: dto.role, senderId: requesterId, expiresAt },
+        data: {
+          teamId,
+          email: dto.email,
+          role: dto.role,
+          senderId: requesterId,
+          expiresAt,
+        },
       }),
     ]);
 
     if (team && sender) {
-      this.emailService.sendTeamInvitation({
+      // Fire-and-forget: EmailService logs its own failures.
+      void this.emailService.sendTeamInvitation({
         to: dto.email,
         inviterName: sender.name,
         teamName: team.name,
@@ -87,7 +127,9 @@ export class TeamsService {
       });
     }
 
-    const invitedUser = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const invitedUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
     if (invitedUser) {
       await this.prisma.notification.create({
         data: {
@@ -107,16 +149,20 @@ export class TeamsService {
       where: { token },
       include: { team: true },
     });
-    if (!invitation || invitation.status !== 'PENDING') throw new NotFoundException('Invalid or expired invitation');
-    if (invitation.expiresAt < new Date()) throw new ForbiddenException('Invitation has expired');
+    if (!invitation || invitation.status !== 'PENDING')
+      throw new NotFoundException('Invalid or expired invitation');
+    if (invitation.expiresAt < new Date())
+      throw new ForbiddenException('Invitation has expired');
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (user?.email !== invitation.email) throw new ForbiddenException('This invitation is not for your account');
+    if (user?.email !== invitation.email)
+      throw new ForbiddenException('This invitation is not for your account');
 
     const alreadyMember = await this.prisma.teamMember.findUnique({
       where: { userId_teamId: { userId, teamId: invitation.teamId } },
     });
-    if (alreadyMember) throw new ConflictException('Already a member of this team');
+    if (alreadyMember)
+      throw new ConflictException('Already a member of this team');
 
     await this.prisma.$transaction([
       this.prisma.teamMember.create({
@@ -128,7 +174,11 @@ export class TeamsService {
       }),
     ]);
 
-    return { message: 'Invitation accepted', teamId: invitation.teamId, teamName: invitation.team.name };
+    return {
+      message: 'Invitation accepted',
+      teamId: invitation.teamId,
+      teamName: invitation.team.name,
+    };
   }
 
   async getMyInvitations(userId: string) {
@@ -144,9 +194,15 @@ export class TeamsService {
     });
   }
 
-  async updateMemberRole(teamId: string, requesterId: string, memberId: string, dto: UpdateMemberRoleDto) {
+  async updateMemberRole(
+    teamId: string,
+    requesterId: string,
+    memberId: string,
+    dto: UpdateMemberRoleDto,
+  ) {
     await this.assertRole(teamId, requesterId, [Role.ADMIN]);
-    if (dto.role !== Role.ADMIN) await this.assertNotLastAdmin(teamId, memberId);
+    if (dto.role !== Role.ADMIN)
+      await this.assertNotLastAdmin(teamId, memberId);
     return this.prisma.teamMember.update({
       where: { userId_teamId: { userId: memberId, teamId } },
       data: { role: dto.role },
@@ -163,17 +219,26 @@ export class TeamsService {
   }
 
   async declineInvitation(token: string, userId: string) {
-    const invitation = await this.prisma.invitation.findUnique({ where: { token } });
+    const invitation = await this.prisma.invitation.findUnique({
+      where: { token },
+    });
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!invitation || invitation.status !== 'PENDING') throw new NotFoundException('Invalid or expired invitation');
-    if (user?.email !== invitation.email) throw new ForbiddenException('This invitation is not for your account');
-    await this.prisma.invitation.update({ where: { token }, data: { status: 'REJECTED' } });
+    if (!invitation || invitation.status !== 'PENDING')
+      throw new NotFoundException('Invalid or expired invitation');
+    if (user?.email !== invitation.email)
+      throw new ForbiddenException('This invitation is not for your account');
+    await this.prisma.invitation.update({
+      where: { token },
+      data: { status: 'REJECTED' },
+    });
     return { message: 'Invitation declined' };
   }
 
   async leaveTeam(teamId: string, userId: string) {
     await this.assertNotLastAdmin(teamId, userId);
-    await this.prisma.teamMember.delete({ where: { userId_teamId: { userId, teamId } } });
+    await this.prisma.teamMember.delete({
+      where: { userId_teamId: { userId, teamId } },
+    });
     return { message: 'You left the team' };
   }
 
@@ -184,15 +249,19 @@ export class TeamsService {
     });
     if (!member) throw new NotFoundException('Member not found');
     if (member.role !== Role.ADMIN) return;
-    const admins = await this.prisma.teamMember.count({ where: { teamId, role: Role.ADMIN } });
-    if (admins <= 1) throw new ConflictException('A team needs at least one admin');
+    const admins = await this.prisma.teamMember.count({
+      where: { teamId, role: Role.ADMIN },
+    });
+    if (admins <= 1)
+      throw new ConflictException('A team needs at least one admin');
   }
 
   async assertRole(teamId: string, userId: string, roles: Role[]) {
     const member = await this.prisma.teamMember.findUnique({
       where: { userId_teamId: { userId, teamId } },
     });
-    if (!member || !roles.includes(member.role)) throw new ForbiddenException('Insufficient permissions');
+    if (!member || !roles.includes(member.role))
+      throw new ForbiddenException('Insufficient permissions');
     return member;
   }
 
@@ -200,7 +269,10 @@ export class TeamsService {
     const invitation = await this.prisma.invitation.findUnique({
       where: { token },
       select: {
-        email: true, role: true, status: true, expiresAt: true,
+        email: true,
+        role: true,
+        status: true,
+        expiresAt: true,
         team: { select: { name: true } },
         sender: { select: { name: true } },
       },

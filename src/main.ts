@@ -1,51 +1,47 @@
-import { NestFactory, Reflector } from '@nestjs/core';
-import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
-import { AllExceptionsFilter } from './common/filters/http-exception.filter';
-import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const config = app.get(ConfigService);
 
-  app.setGlobalPrefix('api/v1');
+  // Render terminates TLS at its proxy; trusting it lets rate limiting see the real client IP.
+  app.set('trust proxy', 1);
+  // CSP is off because this is a JSON API and CSP would block Swagger UI's inline scripts.
+  app.use(helmet({ contentSecurityPolicy: false }));
   app.use(cookieParser());
-
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: config.getOrThrow<string>('FRONTEND_URL'),
     credentials: true,
   });
+  app.setGlobalPrefix('api/v1');
+  app.enableShutdownHooks();
 
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
-
-  const reflector = app.get(Reflector);
-  app.useGlobalGuards(new JwtAuthGuard(reflector));
-  app.useGlobalFilters(new AllExceptionsFilter());
-  app.useGlobalInterceptors(
-    new ResponseInterceptor(),
-    new ClassSerializerInterceptor(reflector),
-  );
-
-  const config = new DocumentBuilder()
+  const swagger = new DocumentBuilder()
     .setTitle('ProjectFlow API')
-    .setDescription('SaaS Project Management Platform API')
+    .setDescription(
+      'Team task manager: teams with roles, projects, kanban tasks, comments and notifications. ' +
+        'Successful responses are wrapped as `{ success, data, timestamp }`.',
+    )
     .setVersion('1.0')
     .addBearerAuth()
     .build();
+  SwaggerModule.setup('api/docs', app, () =>
+    SwaggerModule.createDocument(app, swagger),
+  );
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
-
-  const port = process.env.PORT || 3001;
+  const port = config.get<number>('PORT') ?? 3001;
   await app.listen(port);
-  console.log(`🚀 API running on http://localhost:${port}/api/v1`);
-  console.log(`📚 Swagger docs on http://localhost:${port}/api/docs`);
+  Logger.log(
+    `Listening on port ${port} · API at /api/v1 · docs at /api/docs`,
+    'Bootstrap',
+  );
 }
 
-bootstrap();
+void bootstrap();

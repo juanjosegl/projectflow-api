@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TeamsService } from '../teams/teams.service';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -21,7 +25,10 @@ export class ProjectsService {
   }
 
   async create(teamId: string, userId: string, dto: CreateProjectDto) {
-    await this.teamsService.assertRole(teamId, userId, [Role.ADMIN, Role.MANAGER]);
+    await this.teamsService.assertRole(teamId, userId, [
+      Role.ADMIN,
+      Role.MANAGER,
+    ]);
     return this.prisma.project.create({
       data: { ...dto, ...this.dates(dto), teamId },
       include: { _count: { select: { tasks: true } } },
@@ -52,7 +59,9 @@ export class ProjectsService {
           include: {
             members: {
               include: {
-                user: { select: { id: true, name: true, email: true, avatar: true } },
+                user: {
+                  select: { id: true, name: true, email: true, avatar: true },
+                },
               },
             },
           },
@@ -75,14 +84,24 @@ export class ProjectsService {
   }
 
   async update(projectId: string, userId: string, dto: UpdateProjectDto) {
-    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+    });
     if (!project) throw new NotFoundException('Project not found');
-    await this.teamsService.assertRole(project.teamId, userId, [Role.ADMIN, Role.MANAGER]);
-    return this.prisma.project.update({ where: { id: projectId }, data: { ...dto, ...this.dates(dto) } });
+    await this.teamsService.assertRole(project.teamId, userId, [
+      Role.ADMIN,
+      Role.MANAGER,
+    ]);
+    return this.prisma.project.update({
+      where: { id: projectId },
+      data: { ...dto, ...this.dates(dto) },
+    });
   }
 
   async remove(projectId: string, userId: string) {
-    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+    });
     if (!project) throw new NotFoundException('Project not found');
     await this.teamsService.assertRole(project.teamId, userId, [Role.ADMIN]);
     await this.prisma.project.delete({ where: { id: projectId } });

@@ -81,11 +81,15 @@ export class DashboardService {
         where: { project: { teamId } },
         _count: { priority: true },
       }),
-      this.prisma.teamMember.count({ where: { teamId } },),
+      this.prisma.teamMember.count({ where: { teamId } }),
       this.prisma.project.count({ where: { teamId } }),
       this.prisma.task.groupBy({
         by: ['assigneeId'],
-        where: { project: { teamId }, status: TaskStatus.DONE, assigneeId: { not: null } },
+        where: {
+          project: { teamId },
+          status: TaskStatus.DONE,
+          assigneeId: { not: null },
+        },
         _count: { assigneeId: true },
         orderBy: { _count: { assigneeId: 'desc' } },
         take: 5,
@@ -99,12 +103,14 @@ export class DashboardService {
 
     const priorityStats = Object.values(TaskPriority).map((priority) => ({
       priority,
-      count: tasksByPriority.find((t) => t.priority === priority)?._count.priority ?? 0,
+      count:
+        tasksByPriority.find((t) => t.priority === priority)?._count.priority ??
+        0,
     }));
 
     // Enrich top contributors with user data
     const users = await this.prisma.user.findMany({
-      where: { id: { in: topContributors.map((c) => c.assigneeId!) } },
+      where: { id: { in: topContributors.map((c) => c.assigneeId) } },
       select: { id: true, name: true, avatar: true },
     });
     const enrichedContributors = topContributors.map((c) => ({
